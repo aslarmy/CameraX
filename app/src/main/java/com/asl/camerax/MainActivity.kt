@@ -1,5 +1,6 @@
 package com.asl.camerax
 
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Build
@@ -17,8 +18,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -52,8 +53,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var camera: Camera
     private lateinit var cameraSelector: CameraSelector
     private var lensFacing = CameraSelector.LENS_FACING_BACK
+    private var aspectRatio = AspectRatio.RATIO_16_9
 
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -83,7 +86,20 @@ class MainActivity : AppCompatActivity() {
         mainBinding.flashToggleIB.setOnClickListener {
             setFlashIcon(camera)
         }
+        mainBinding.aspectRatioText.setOnClickListener {
+            if (aspectRatio == AspectRatio.RATIO_16_9) {
+                aspectRatio = AspectRatio.RATIO_4_3
+                setAspectRatio("H,4:3")
+                mainBinding.aspectRatioText.text = "4:3"
+            } else {
+                aspectRatio = AspectRatio.RATIO_16_9
+                setAspectRatio("H,0:0")
+                mainBinding.aspectRatioText.text = "16:9"
+            }
+            bindCameraUserCases()
+        }
     }
+
 
     private fun checkMultiplePermission(): Boolean {
         val listPermissionNeeded = arrayListOf<String>()
@@ -168,28 +184,13 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun aspectRatio(width: Int, height: Int): Int {
-        val previewRatio = maxOf(width, height).toDouble() / minOf(width, height)
-        return if (
-            abs(previewRatio - 4.0 / 3.0) <= abs(previewRatio - 16.0 / 9.0)
-        ) {
-            AspectRatio.RATIO_4_3
-        } else {
-            AspectRatio.RATIO_16_9
-        }
-    }
-
     private fun bindCameraUserCases() {
-        val screenAspectRatio = aspectRatio(
-            mainBinding.previewView.width,
-            mainBinding.previewView.height
-        )
         val rotation = mainBinding.previewView.display.rotation
 
         val resolutionSelector = ResolutionSelector.Builder()
             .setAspectRatioStrategy(
                 AspectRatioStrategy(
-                    screenAspectRatio,
+                    aspectRatio,
                     AspectRatioStrategy.FALLBACK_RULE_AUTO
                 )
             ).build()
@@ -261,7 +262,14 @@ class MainActivity : AppCompatActivity() {
 
         val imageFile = File(imageFolder, fileName)
 
-        val outputOption = OutputFileOptions.Builder(imageFile).build()
+        // Avoid mirror effects
+        val metadata = ImageCapture.Metadata().apply {
+            isReversedHorizontal = (lensFacing == CameraSelector.LENS_FACING_FRONT)
+        }
+
+        val outputOption = OutputFileOptions.Builder(imageFile)
+            .setMetadata(metadata)
+            .build()
 
         imageCapture.takePicture(
             outputOption,
@@ -288,4 +296,11 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun setAspectRatio(ratio: String) {
+        mainBinding.previewView.layoutParams = mainBinding.previewView.layoutParams.apply {
+            if (this is ConstraintLayout.LayoutParams) {
+                dimensionRatio = ratio
+            }
+        }
+    }
 }

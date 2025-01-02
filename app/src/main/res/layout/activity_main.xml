@@ -1,51 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/black"
     tools:context=".MainActivity">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/captureIB"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
         android:layout_marginBottom="30dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
         android:src="@drawable/camera"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:tint="@color/white" />
 
     <ImageButton
         android:id="@+id/flashToggleIB"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_alignParentEnd="true"
         android:layout_margin="10dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
         android:src="@drawable/flash_off"
+        app:layout_constraintBottom_toTopOf="@+id/flipCameraIB"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/white" />
 
     <ImageButton
         android:id="@+id/flipCameraIB"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_below="@+id/flashToggleIB"
-        android:layout_alignParentEnd="true"
         android:layout_marginEnd="10dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
         android:src="@drawable/flip_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/flashToggleIB"
         app:tint="@color/white" />
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/aspectRatioText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
+        android:text="16:9"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@id/flipCameraIB"
+        app:layout_constraintStart_toStartOf="@+id/flipCameraIB"
+        app:layout_constraintTop_toBottomOf="@+id/flipCameraIB" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
