@@ -3,9 +3,12 @@ package com.asl.camerax
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.pm.PackageManager
+import android.graphics.drawable.GradientDrawable.Orientation
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -52,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var camera: Camera
     private lateinit var cameraSelector: CameraSelector
+    private var orientationEventListener: OrientationEventListener? = null
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var aspectRatio = AspectRatio.RATIO_16_9
 
@@ -213,6 +217,19 @@ class MainActivity : AppCompatActivity() {
             .requireLensFacing(lensFacing)
             .build()
 
+
+        orientationEventListener = object : OrientationEventListener(this) {
+            override fun onOrientationChanged(orientation: Int) {
+                imageCapture.targetRotation = when (orientation) {
+                    in 45..134 -> Surface.ROTATION_270
+                    in 135..224 -> Surface.ROTATION_180
+                    in 225..314 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+            }
+        }
+        orientationEventListener?.enable()
+
         try {
             cameraProvider.unbindAll()
 
@@ -302,5 +319,15 @@ class MainActivity : AppCompatActivity() {
                 dimensionRatio = ratio
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        orientationEventListener?.enable()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        orientationEventListener?.disable()
     }
 }
