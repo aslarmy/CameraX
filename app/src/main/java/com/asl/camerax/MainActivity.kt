@@ -3,11 +3,13 @@ package com.asl.camerax
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.pm.PackageManager
-import android.graphics.drawable.GradientDrawable.Orientation
+import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.MotionEvent
 import android.view.OrientationEventListener
+import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -31,7 +34,7 @@ import com.asl.camerax.databinding.ActivityMainBinding
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlin.math.abs
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,7 +61,6 @@ class MainActivity : AppCompatActivity() {
     private var orientationEventListener: OrientationEventListener? = null
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var aspectRatio = AspectRatio.RATIO_16_9
-
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -237,9 +239,47 @@ class MainActivity : AppCompatActivity() {
                 this, cameraSelector, preview, imageCapture
             )
 
-
+            setupZoomAndTapToFocus()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+
+    private fun setupZoomAndTapToFocus() {
+        val listener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val currentZoomRatio = camera.cameraInfo.zoomState.value?.zoomRatio ?: 1f
+                val delta = detector.scaleFactor
+                camera.cameraControl.setZoomRatio(currentZoomRatio * delta)
+                return true
+            }
+        }
+
+        val scaleGestureDetector = ScaleGestureDetector(this, listener)
+
+        mainBinding.previewView.setOnTouchListener { view, event ->
+            scaleGestureDetector.onTouchEvent(event)
+
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                val factor = mainBinding.previewView.meteringPointFactory
+                val point = factor.createPoint(event.x, event.y)
+                val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
+                    .setAutoCancelDuration(2, TimeUnit.SECONDS)
+                    .build()
+
+
+                val x = event.x
+                val y = event.y
+
+                val focusCircle = RectF(x - 50, y - 50, x + 50, y + 50)
+                mainBinding.focusCircleView.focusCircle = focusCircle
+                mainBinding.focusCircleView.invalidate()
+
+                camera.cameraControl.startFocusAndMetering(action)
+                view.performClick()
+            }
+            true
         }
     }
 
