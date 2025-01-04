@@ -1,12 +1,14 @@
 package com.asl.camerax
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
 import android.view.OrientationEventListener
@@ -51,7 +53,7 @@ class MainActivity : AppCompatActivity() {
     } else {
         arrayListOf(
             android.Manifest.permission.CAMERA,
-            /*   android.Manifest.permission.WRITE_EXTERNAL_STORAGE,*/
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
         )
     }
 
@@ -305,13 +307,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePhoto() {
-        /*val imageFolder = File(
+        val imageFolder = File(
             Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES
             ),
             "Images"
-        )*/
-        val imageFolder = File(filesDir, "Images")
+        )
+
         if (!imageFolder.exists()) {
             imageFolder.mkdir()
         }
@@ -319,16 +321,42 @@ class MainActivity : AppCompatActivity() {
         val fileName = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.getDefault())
             .format(System.currentTimeMillis()) + ".jpg"
 
-        val imageFile = File(imageFolder, fileName)
+
+        val contentValue = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Images")
+            }
+        }
 
         // Avoid mirror effects
         val metadata = ImageCapture.Metadata().apply {
             isReversedHorizontal = (lensFacing == CameraSelector.LENS_FACING_FRONT)
         }
 
-        val outputOption = OutputFileOptions.Builder(imageFile)
-            .setMetadata(metadata)
-            .build()
+        val uri = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
+        val outputOption =
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                OutputFileOptions.Builder(
+                    contentResolver,
+                    uri,
+                    contentValue
+                )
+                    .setMetadata(metadata)
+                    .build()
+            } else {
+                val imageFile = File(imageFolder, fileName)
+                OutputFileOptions.Builder(imageFile)
+                    .setMetadata(metadata)
+                    .build()
+            }
+
 
         imageCapture.takePicture(
             outputOption,
