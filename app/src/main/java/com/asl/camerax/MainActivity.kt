@@ -7,6 +7,7 @@ import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import android.view.MotionEvent
 import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
@@ -50,7 +51,7 @@ class MainActivity : AppCompatActivity() {
     } else {
         arrayListOf(
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            /*   android.Manifest.permission.WRITE_EXTERNAL_STORAGE,*/
         )
     }
 
@@ -304,17 +305,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePhoto() {
-        val imageFolder = File(
+        /*val imageFolder = File(
             Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES
             ),
             "Images"
-        )
+        )*/
+        val imageFolder = File(filesDir, "Images")
         if (!imageFolder.exists()) {
             imageFolder.mkdir()
         }
 
-        val fileName = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault())
+        val fileName = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.getDefault())
             .format(System.currentTimeMillis()) + ".jpg"
 
         val imageFile = File(imageFolder, fileName)
@@ -339,6 +341,7 @@ class MainActivity : AppCompatActivity() {
                         message,
                         Toast.LENGTH_LONG
                     ).show()
+                    Log.d("ImageCheck", message)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
