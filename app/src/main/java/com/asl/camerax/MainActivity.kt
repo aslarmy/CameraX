@@ -2,17 +2,14 @@ package com.asl.camerax
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
 import android.view.OrientationEventListener
@@ -33,7 +30,7 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.FallbackStrategy
-import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -359,13 +356,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePhoto() {
-        val imageFolder = File(
-            Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES
-            ),
-            "Images"
-        )
+        // Get app-specific directory in internal storage (No permissions required)
+        val imageFolder = File(filesDir, "Images")
 
+        // Create the directory if it doesn't exist
         if (!imageFolder.exists()) {
             imageFolder.mkdir()
         }
@@ -373,41 +367,16 @@ class MainActivity : AppCompatActivity() {
         val fileName = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.getDefault())
             .format(System.currentTimeMillis()) + ".jpg"
 
-
-        val contentValue = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Images")
-            }
-        }
-
         // Avoid mirror effects
         val metadata = ImageCapture.Metadata().apply {
             isReversedHorizontal = (lensFacing == CameraSelector.LENS_FACING_FRONT)
         }
-
-        val uri = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-
-        val outputOption =
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                OutputFileOptions.Builder(
-                    contentResolver,
-                    uri,
-                    contentValue
-                )
-                    .setMetadata(metadata)
-                    .build()
-            } else {
-                val imageFile = File(imageFolder, fileName)
-                OutputFileOptions.Builder(imageFile)
-                    .setMetadata(metadata)
-                    .build()
-            }
+        // Create the image file in app's internal storage
+        val imageFile = File(imageFolder, fileName)
+        // Create OutputFileOptions with internal storage file
+        val outputOption = OutputFileOptions.Builder(imageFile)
+            .setMetadata(metadata)
+            .build()
 
         imageCapture.takePicture(
             outputOption,
@@ -454,25 +423,23 @@ class MainActivity : AppCompatActivity() {
 
         startRecording()
 
-        val fileName = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.getDefault())
-            .format(System.currentTimeMillis()) + ".jpg"
 
+        // Create a unique filename for the video based on timestamp
+        val fileName1 = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSS", Locale.getDefault())
+            .format(System.currentTimeMillis()) + ".mp4"
 
-        val contentValue = ContentValues().apply {
-            put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
-            }
-        }
+        // Get the app's internal storage directory for video files
+        val videoFile = File(filesDir, "videos/$fileName1")
 
-        val mediaStoreOutputOption = MediaStoreOutputOptions
-            .Builder(contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-            .setContentValues(contentValue)
+        // Ensure the directory exists
+        videoFile.parentFile?.mkdirs()
+
+        // Prepare the output options for saving the video to the file
+        val fileOutputOptions = FileOutputOptions.Builder(videoFile)
             .build()
 
         recording = videoCapture.output
-            .prepareRecording(this, mediaStoreOutputOption)
+            .prepareRecording(this, fileOutputOptions)
             .apply {
                 if (ActivityCompat.checkSelfPermission(
                         this@MainActivity,
@@ -525,6 +492,33 @@ class MainActivity : AppCompatActivity() {
                 dimensionRatio = ratio
             }
         }
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        val dirImg = File(filesDir, "Images")
+        dirImg.parentFile?.mkdirs()
+        val dirVideo = File(filesDir, "videos")
+        dirVideo.parentFile?.mkdirs()
+
+        if (dirImg.exists() && dirImg.isDirectory) {
+            val fileList = dirImg.listFiles()
+            if (!fileList.isNullOrEmpty()) {
+                fileList.forEach { file ->
+                    Log.d(TAG, "dirImg: ${file.absolutePath}")
+                }
+            }
+        }
+        if (dirVideo.exists() && dirVideo.isDirectory) {
+            val fileList = dirVideo.listFiles()
+            if (!fileList.isNullOrEmpty()) {
+                fileList.forEach { file ->
+                    Log.d(TAG, "dirVideo: ${file.absolutePath}")
+                }
+            }
+        }
+
     }
 
     override fun onResume() {
