@@ -74,8 +74,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/app_name"
-        android:scaleType="centerCrop"
         android:text="16:9"
         android:textColor="@color/white"
         android:textSize="18sp"
@@ -83,5 +81,33 @@
         app:layout_constraintEnd_toEndOf="@id/flipCameraIB"
         app:layout_constraintStart_toStartOf="@+id/flipCameraIB"
         app:layout_constraintTop_toBottomOf="@+id/flipCameraIB" />
+
+    <ImageButton
+        android:id="@+id/changeCameraToVideoIB"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="10dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_photo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/aspectRatioText"
+        app:tint="@color/white" />
+
+    <Chronometer
+        android:id="@+id/recordingTimerC"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="30dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:text="00:00"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
